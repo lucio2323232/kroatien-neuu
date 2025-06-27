@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🇭🇷 Kroatien-Trainer – Multiplayer 🌞</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #ffa500, #00bfff);
+      color: white;
+      text-align: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      animation: bgmove 15s ease-in-out infinite alternate;
+    }
+    @keyframes bgmove {
+      0% { background-position: left; }
+      100% { background-position: right; }
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    input, button {
+      padding: 1rem;
+      margin: 0.5rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    input {
+      width: 200px;
+    }
+    button {
+      cursor: pointer;
+      background: white;
+      color: #00bfff;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background: #00bfff;
+      color: white;
+      transform: scale(1.05);
+    }
+    #players {
+      margin-top: 2rem;
+      background: rgba(255,255,255,0.2);
+      padding: 1rem;
+      border-radius: 12px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🇭🇷 Kroatien-Trainer</h1>
+  <p>Multiplayer mit Backend – Kroatische Wörter, Städte & mehr!</p>
+  <input id="nameInput" placeholder="Dein Name..." />
+  <br/>
+  <button onclick="joinGame()">Ich will mitspielen</button>
+  <button onclick="startGame()">Spiel starten</button>
+  <br/>
+  <button onclick="showPlayers()">Admin: Spieler anzeigen</button>
+  <button onclick="showGames()">📦 Datenbank anzeigen</button>
+
+  <div id="players" style="display:none;">
+    <h3>👥 Spieler im Spiel:</h3>
+    <ul id="playerList"></ul>
+  </div>
+
+  <script>
+    async function joinGame() {
+      const name = document.getElementById('nameInput').value;
+      const res = await fetch('/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function startGame() {
+      const res = await fetch('/start-game', { method: 'POST' });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function showPlayers() {
+      const res = await fetch('/players');
+      const players = await res.json();
+      document.getElementById('players').style.display = 'block';
+      const list = document.getElementById('playerList');
+      list.innerHTML = '';
+      players.forEach(p => {
+        const item = document.createElement('li');
+        item.textContent = p.name + ' (' + new Date(p.joinedAt).toLocaleTimeString() + ')';
+        list.appendChild(item);
+      });
+    }
+
+    async function showGames() {
+      const res = await fetch('/games');
+      const games = await res.json();
+      alert(JSON.stringify(games, null, 2));
+    }
+  </script>
+</body>
+</html>
