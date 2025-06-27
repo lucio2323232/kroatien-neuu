@@ -1,120 +1,149 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🇭🇷 Kroatien-Trainer – Multiplayer 🌞</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kroatien-Trainer</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #ffa500, #00bfff);
+      background: linear-gradient(135deg, #FFA500, #1E90FF);
       color: white;
-      text-align: center;
-      height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      animation: bgmove 15s ease-in-out infinite alternate;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
     }
-    @keyframes bgmove {
-      0% { background-position: left; }
-      100% { background-position: right; }
-    }
+
     h1 {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+      font-size: 3em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
-    p {
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
+
+    .mode-select {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-    input, button {
-      padding: 1rem;
-      margin: 0.5rem;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    input {
-      width: 200px;
-    }
+
     button {
-      cursor: pointer;
-      background: white;
-      color: #00bfff;
-      transition: all 0.3s ease;
-    }
-    button:hover {
-      background: #00bfff;
-      color: white;
-      transform: scale(1.05);
-    }
-    #players {
-      margin-top: 2rem;
-      background: rgba(255,255,255,0.2);
-      padding: 1rem;
+      font-size: 1.3em;
+      padding: 15px 40px;
+      border: none;
       border-radius: 12px;
-      width: 300px;
+      cursor: pointer;
+      background-color: white;
+      color: #1E90FF;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease, background-color 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background-color: #f8c146;
+      color: white;
+    }
+
+    #response, #quiz-box {
+      margin-top: 30px;
+      font-size: 1.2em;
+      background-color: rgba(0,0,0,0.3);
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+
+    input {
+      padding: 8px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    footer {
+      margin-top: 50px;
+      font-size: 1.1em;
+      color: #fffbe6;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
   <h1>🇭🇷 Kroatien-Trainer</h1>
-  <p>Multiplayer mit Backend – Kroatische Wörter, Städte & mehr!</p>
-  <input id="nameInput" placeholder="Dein Name..." />
-  <br/>
-  <button onclick="joinGame()">Ich will mitspielen</button>
-  <button onclick="startGame()">Spiel starten</button>
-  <br/>
-  <button onclick="showPlayers()">Admin: Spieler anzeigen</button>
-  <button onclick="showGames()">📦 Datenbank anzeigen</button>
+  <p>Wähle deinen Spielmodus:</p>
 
-  <div id="players" style="display:none;">
-    <h3>👥 Spieler im Spiel:</h3>
-    <ul id="playerList"></ul>
+  <div class="mode-select">
+    <button onclick="startSingleplayer()">🎯 Einzelspieler</button>
+    <button onclick="startMultiplayer()">🤝 Multiplayer</button>
   </div>
 
+  <div id="quiz-box" style="display:none;">
+    <p id="question"></p>
+    <input id="answer" type="text" placeholder="Deine Antwort"/>
+    <button onclick="checkAnswer()">Antwort prüfen</button>
+    <p id="quiz-result"></p>
+  </div>
+
+  <div id="response"></div>
+
   <script>
-    async function joinGame() {
-      const name = document.getElementById('nameInput').value;
-      const res = await fetch('/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      const data = await res.json();
-      alert(data.message || data.error);
+    const questions = [
+      { q: "Wie heißt die Hauptstadt von Kroatien?", a: "Zagreb" },
+      { q: "Welche Stadt liegt an der Adria und ist bekannt für ihre Altstadt?", a: "Dubrovnik" },
+      { q: "Wie heißt die kroatische Währung (alt)?", a: "Kuna" },
+      { q: "Welche Stadt beginnt mit 'S' und liegt an der Küste?", a: "Split" },
+      { q: "Wie heißt der bekannte Nationalpark mit Wasserfällen?", a: "Plitvicer Seen" }
+    ];
+
+    let current = 0;
+
+    function startSingleplayer() {
+      current = 0;
+      document.getElementById('response').innerHTML = "";
+      document.getElementById('quiz-box').style.display = "block";
+      showQuestion();
     }
 
-    async function startGame() {
-      const res = await fetch('/start-game', { method: 'POST' });
-      const data = await res.json();
-      alert(data.message || data.error);
+    function showQuestion() {
+      document.getElementById('quiz-result').textContent = "";
+      document.getElementById('answer').value = "";
+      document.getElementById('question').textContent = questions[current].q;
     }
 
-    async function showPlayers() {
-      const res = await fetch('/players');
-      const players = await res.json();
-      document.getElementById('players').style.display = 'block';
-      const list = document.getElementById('playerList');
-      list.innerHTML = '';
-      players.forEach(p => {
-        const item = document.createElement('li');
-        item.textContent = p.name + ' (' + new Date(p.joinedAt).toLocaleTimeString() + ')';
-        list.appendChild(item);
-      });
+    function checkAnswer() {
+      const userAnswer = document.getElementById('answer').value.trim().toLowerCase();
+      const correctAnswer = questions[current].a.toLowerCase();
+      if (userAnswer === correctAnswer) {
+        document.getElementById('quiz-result').textContent = "✅ Richtig!";
+      } else {
+        document.getElementById('quiz-result').textContent = "❌ Falsch, richtige Antwort: " + questions[current].a;
+      }
+      current = (current + 1) % questions.length;
+      setTimeout(showQuestion, 2000);
     }
 
-    async function showGames() {
-      const res = await fetch('/games');
-      const games = await res.json();
-      alert(JSON.stringify(games, null, 2));
+    function startMultiplayer() {
+      const host = Math.random() < 0.5;
+      if (host) {
+        const gameCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+        document.getElementById('response').innerHTML = `🎲 Du bist der Host. Gib diesen Code deinem Freund: <strong>${gameCode}</strong>`;
+      } else {
+        const code = prompt("Bitte gib den Spielcode deines Freundes ein:");
+        document.getElementById('response').innerHTML = `🔗 Du trittst dem Spiel mit Code <strong>${code}</strong> bei.`;
+      }
     }
   </script>
+
+  <footer>
+    Made by Eliott
+  </footer>
 </body>
 </html>
